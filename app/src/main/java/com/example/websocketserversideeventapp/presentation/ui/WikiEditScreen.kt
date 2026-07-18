@@ -78,18 +78,19 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.websocketserversideeventapp.domain.model.SseConnectionStatus
 import com.example.websocketserversideeventapp.domain.model.WikiEdit
 import com.example.websocketserversideeventapp.presentation.viewmodel.WikiEditUiState
 import com.example.websocketserversideeventapp.presentation.viewmodel.WikiEditViewModel
+import com.example.websocketserversideeventapp.ui.theme.WebSocketServerSideEventAppTheme
 import org.koin.androidx.compose.koinViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WikiEditScreen(
     viewModel: WikiEditViewModel = koinViewModel(),
@@ -97,6 +98,31 @@ fun WikiEditScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val connectionStatus by viewModel.connectionStatus.collectAsState()
+
+    WikiEditContent(
+        uiState = uiState,
+        connectionStatus = connectionStatus,
+        onToggleConnection = { viewModel.toggleConnection() },
+        onClearHistory = { viewModel.clearHistory() },
+        onSearchQueryChange = { viewModel.setSearchQuery(it) },
+        onWikiChange = { viewModel.setSearchWiki(it) },
+        onExcludeBotsChange = { viewModel.setExcludeBots(it) },
+        modifier = modifier
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun WikiEditContent(
+    uiState: WikiEditUiState,
+    connectionStatus: SseConnectionStatus,
+    onToggleConnection: () -> Unit,
+    onClearHistory: () -> Unit,
+    onSearchQueryChange: (String) -> Unit,
+    onWikiChange: (String) -> Unit,
+    onExcludeBotsChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier
+) {
     val context = LocalContext.current
     var showFilterPanel by remember { mutableStateOf(false) }
 
@@ -117,7 +143,7 @@ fun WikiEditScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { viewModel.clearHistory() }) {
+                    IconButton(onClick = onClearHistory) {
                         Icon(
                             imageVector = Icons.Default.Refresh,
                             contentDescription = "Clear History",
@@ -152,7 +178,7 @@ fun WikiEditScreen(
             // Control Panel
             ControlPanel(
                 status = connectionStatus,
-                onToggleConnection = { viewModel.toggleConnection() }
+                onToggleConnection = onToggleConnection
             )
 
             // Real-Time Analytics Dashboard
@@ -166,9 +192,9 @@ fun WikiEditScreen(
             ) {
                 FilterPanel(
                     uiState = uiState,
-                    onSearchQueryChange = { viewModel.setSearchQuery(it) },
-                    onWikiChange = { viewModel.setSearchWiki(it) },
-                    onExcludeBotsChange = { viewModel.setExcludeBots(it) }
+                    onSearchQueryChange = onSearchQueryChange,
+                    onWikiChange = onWikiChange,
+                    onExcludeBotsChange = onExcludeBotsChange
                 )
             }
 
@@ -786,4 +812,67 @@ private fun formatTime(timestampSeconds: Long): String {
     val date = Date(timestampSeconds * 1000)
     val sdf = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
     return sdf.format(date)
+}
+
+@Preview(showBackground = true)
+@Composable
+fun WikiEditScreenPreview() {
+    val sampleEdits = listOf(
+        WikiEdit(
+            id = 1L,
+            type = "edit",
+            title = "Android (operating system)",
+            user = "GoogleDev",
+            bot = false,
+            wiki = "enwiki",
+            comment = "Added information about Jetpack Compose",
+            timestamp = System.currentTimeMillis() / 1000,
+            serverUrl = "en.wikipedia.org",
+            changeLength = 150
+        ),
+        WikiEdit(
+            id = 2L,
+            type = "edit",
+            title = "Kotlin (programming language)",
+            user = "JetBrainsBot",
+            bot = true,
+            wiki = "enwiki",
+            comment = "Updated version information",
+            timestamp = System.currentTimeMillis() / 1000 - 60,
+            serverUrl = "en.wikipedia.org",
+            changeLength = 25
+        ),
+        WikiEdit(
+            id = 3L,
+            type = "new",
+            title = "Generative AI",
+            user = "AI_Enthusiast",
+            bot = false,
+            wiki = "enwiki",
+            comment = "Created new page",
+            timestamp = System.currentTimeMillis() / 1000 - 120,
+            serverUrl = "en.wikipedia.org",
+            changeLength = 1200
+        )
+    )
+
+    val uiState = WikiEditUiState(
+        filteredEdits = sampleEdits,
+        totalCount = 3,
+        botCount = 1,
+        totalCharChanges = 1375L,
+        connectionStatus = SseConnectionStatus.CONNECTED
+    )
+
+    WebSocketServerSideEventAppTheme {
+        WikiEditContent(
+            uiState = uiState,
+            connectionStatus = SseConnectionStatus.CONNECTED,
+            onToggleConnection = {},
+            onClearHistory = {},
+            onSearchQueryChange = {},
+            onWikiChange = {},
+            onExcludeBotsChange = {}
+        )
+    }
 }

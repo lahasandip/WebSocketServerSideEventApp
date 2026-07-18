@@ -1,25 +1,43 @@
 package com.example.websocketserversideeventapp.presentation.ui
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.example.websocketserversideeventapp.domain.model.BitcoinPrice
 import com.example.websocketserversideeventapp.domain.model.SseConnectionStatus
+import com.example.websocketserversideeventapp.presentation.viewmodel.BitcoinUiState
 import com.example.websocketserversideeventapp.presentation.viewmodel.BitcoinViewModel
+import com.example.websocketserversideeventapp.ui.theme.WebSocketServerSideEventAppTheme
 import org.koin.androidx.compose.koinViewModel
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,6 +48,24 @@ fun BitcoinPriceScreen(
     val uiState by viewModel.uiState.collectAsState()
     val connectionStatus by viewModel.connectionStatus.collectAsState()
 
+    BitcoinPriceScreenContent(
+        uiState = uiState,
+        connectionStatus = connectionStatus,
+        onAssetSelected = { viewModel.selectAsset(it) },
+        onToggleConnection = { viewModel.toggleConnection() },
+        modifier = modifier
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun BitcoinPriceScreenContent(
+    uiState: BitcoinUiState,
+    connectionStatus: SseConnectionStatus,
+    onAssetSelected: (String) -> Unit,
+    onToggleConnection: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -63,7 +99,7 @@ fun BitcoinPriceScreen(
                 assets.forEach { asset ->
                     FilterChip(
                         selected = uiState.selectedAsset == asset,
-                        onClick = { viewModel.selectAsset(asset) },
+                        onClick = { onAssetSelected(asset) },
                         label = { Text(asset.replace("USDT", "")) },
                         enabled = connectionStatus == SseConnectionStatus.CONNECTED
                     )
@@ -102,7 +138,7 @@ fun BitcoinPriceScreen(
 
             // Toggle Button
             Button(
-                onClick = { viewModel.toggleConnection() },
+                onClick = onToggleConnection,
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(16.dp)
             ) {
@@ -134,7 +170,7 @@ fun BitcoinPriceScreen(
 }
 
 @Composable
-fun PriceHistoryItem(priceUpdate: com.example.websocketserversideeventapp.domain.model.BitcoinPrice) {
+fun PriceHistoryItem(priceUpdate: BitcoinPrice) {
     val sdf = SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault())
     val timeString = sdf.format(Date(priceUpdate.timestamp))
 
@@ -155,5 +191,29 @@ fun PriceHistoryItem(priceUpdate: com.example.websocketserversideeventapp.domain
                 fontWeight = FontWeight.Bold
             )
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun BitcoinPriceScreenPreview() {
+    val samplePriceHistory = listOf(
+        BitcoinPrice(price = 65432.10, timestamp = System.currentTimeMillis()),
+        BitcoinPrice(price = 65420.50, timestamp = System.currentTimeMillis() - 10000),
+        BitcoinPrice(price = 65415.00, timestamp = System.currentTimeMillis() - 20000)
+    )
+    val sampleUiState = BitcoinUiState(
+        selectedAsset = "BTCUSDT",
+        currentPrice = samplePriceHistory[0],
+        priceHistory = samplePriceHistory
+    )
+
+    WebSocketServerSideEventAppTheme {
+        BitcoinPriceScreenContent(
+            uiState = sampleUiState,
+            connectionStatus = SseConnectionStatus.CONNECTED,
+            onAssetSelected = {},
+            onToggleConnection = {}
+        )
     }
 }
