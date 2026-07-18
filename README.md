@@ -41,3 +41,14 @@ The project follows modern Android development practices:
 2. Build in Android Studio (Ladybug or later).
 3. Run on an emulator or physical device.
 4. Use the bottom navigation to switch between SSE (Wikimedia) and WebSocket (Bitcoin) tabs.
+
+## Demo:
+
+
+https://github.com/user-attachments/assets/f4abe3b8-3479-4134-96e1-ddb1f83d1495
+
+
+
+
+
+
